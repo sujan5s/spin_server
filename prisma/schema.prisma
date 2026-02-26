@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               Int               @id @default(autoincrement())
+  email            String            @unique
+  name             String?
+  password         String?
+  googleId         String?           @unique
+  balance          Float             @default(0)
+  dailySpinCount   Int               @default(0)
+  lastSpinDate     DateTime          @default(now())
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  referralCode     String?           @unique
+  referredById     Int?
+  dragonTowerGames DragonTowerGame[]
+  minesGames       MinesGame[]
+  notifications    Notification[]
+  shuffleGames     ShuffleGame[]
+  tickets          Ticket[]
+  transactions     Transaction[]
+  referredBy       User?             @relation("Referrals", fields: [referredById], references: [id])
+  referrals        User[]            @relation("Referrals")
+}
+
+model OtpVerification {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  otp       String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String
+  amount    Float
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Ticket {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  tokenNumber String   @unique
+  price       Float
+  status      String   @default("active")
+  purchasedAt DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model SpinSegment {
+  id          Int     @id @default(autoincrement())
+  label       String
+  value       Float
+  color       String
+  textColor   String
+  probability Int     @default(0)
+  isVisible   Boolean @default(true)
+}
+
+model PlinkoConfiguration {
+  id        Int      @id @default(autoincrement())
+  rows      Int
+  risk      String
+  settings  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([rows, risk])
+}
+
+model MinesGame {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  betAmount  Float
+  minesCount Int
+  mines      String
+  revealed   String
+  status     String
+  multiplier Float    @default(1.0)
+  profit     Float    @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model SpinGameSettings {
+  id             Int @id @default(autoincrement())
+  maxSpinsPerDay Int @default(3)
+}
+
+model MinesConfiguration {
+  id        Int      @id @default(autoincrement())
+  settings  String
+  updatedAt DateTime @updatedAt
+}
+
+model SlotsConfiguration {
+  id        Int      @id @default(autoincrement())
+  settings  String
+  updatedAt DateTime @updatedAt
+}
+
+model ShuffleGame {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  betAmount   Float
+  winningCup  Int
+  selectedCup Int?
+  status      String
+  multiplier  Float
+  payout      Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model DragonTowerGame {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  betAmount   Float
+  difficulty  String
+  status      String
+  currentRow  Int      @default(0)
+  tower       String
+  multiplier  Float    @default(1.0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  multipliers String?
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model DragonTowerSettings {
+  id                Int      @id @default(autoincrement())
+  minBetEasy        Float    @default(10)
+  minBetMedium      Float    @default(10)
+  minBetHard        Float    @default(10)
+  minBetExpert      Float    @default(10)
+  minBetMaster      Float    @default(10)
+  easyMultipliers   String
+  mediumMultipliers String
+  hardMultipliers   String
+  expertMultipliers String
+  masterMultipliers String
+  updatedAt         DateTime @updatedAt
+}
