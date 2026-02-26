@@ -13,8 +13,21 @@ const app = express();
 const port = process.env.PORT || 3001;
 export const prisma = new PrismaClient();
 
+const allowedOrigins = [
+    'http://localhost:3000',
+    process.env.CLIENT_URL,           // e.g. https://your-app.vercel.app
+].filter(Boolean) as string[];
+
 app.use(cors({
-    origin: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. curl, Render health checks)
+        if (!origin) return callback(null, true);
+        // Allow any vercel.app subdomain or exact matches
+        if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+            return callback(null, true);
+        }
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
     credentials: true,
 }));
 app.use(express.json());
