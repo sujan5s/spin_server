@@ -5,6 +5,9 @@ import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/auth.routes';
 import gameRoutes from './routes/game.routes';
 import referralRoutes from './routes/referral.routes';
+import walletRoutes from './routes/wallet.routes';
+import notificationsRoutes from './routes/notifications.routes';
+import settingsRoutes from './routes/settings.routes';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -20,6 +23,9 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/game', gameRoutes);
 app.use('/api/referral', referralRoutes);
+app.use('/api/wallet', walletRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.get('/health', (req: express.Request, res: express.Response) => {
     res.json({ status: 'ok' });
