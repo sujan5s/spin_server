@@ -1,10 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { SignJWT, jwtVerify } from "jose";
+import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 
 const prisma = new PrismaClient();
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "default-secret-key");
+// JWT_SECRET is treated as a string by jsonwebtoken
+const JWT_SECRET = process.env.JWT_SECRET || "default-secret-key";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "INSERT_CLIENT_ID_HERE";
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
@@ -23,10 +24,11 @@ export async function loginUser(email?: string, password?: string) {
         throw new Error("Invalid credentials");
     }
 
-    const token = await new SignJWT({ userId: user.id, email: user.email })
-        .setProtectedHeader({ alg: "HS256" })
-        .setExpirationTime("24h")
-        .sign(JWT_SECRET);
+    const token = jwt.sign(
+        { userId: user.id, email: user.email },
+        JWT_SECRET,
+        { algorithm: "HS256", expiresIn: "24h" }
+    );
 
     return { user, token };
 }
@@ -84,10 +86,11 @@ export async function verifyOtpAndSignUp(email?: string, name?: string, password
         },
     });
 
-    const token = await new SignJWT({ userId: user.id, email: user.email })
-        .setProtectedHeader({ alg: "HS256" })
-        .setExpirationTime("24h")
-        .sign(JWT_SECRET);
+    const token = jwt.sign(
+        { userId: user.id, email: user.email },
+        JWT_SECRET,
+        { algorithm: "HS256", expiresIn: "24h" }
+    );
 
     return { user, token };
 }
@@ -161,12 +164,13 @@ export async function loginWithGoogle(token?: string, referralCode?: string) {
         user = await prisma.user.update({ where: { email }, data: { googleId } });
     }
 
-    const jwt = await new SignJWT({ userId: user.id, email: user.email })
-        .setProtectedHeader({ alg: "HS256" })
-        .setExpirationTime("24h")
-        .sign(JWT_SECRET);
+    const jwtToken = jwt.sign(
+        { userId: user.id, email: user.email },
+        JWT_SECRET,
+        { algorithm: "HS256", expiresIn: "24h" }
+    );
 
-    return { user, token: jwt };
+    return { user, token: jwtToken };
 }
 
 export async function getCurrentUser(tokenValue?: string) {
@@ -174,7 +178,7 @@ export async function getCurrentUser(tokenValue?: string) {
         throw new Error("Not authenticated");
     }
 
-    const { payload } = await jwtVerify(tokenValue, JWT_SECRET);
+    const payload = jwt.verify(tokenValue, JWT_SECRET) as any;
     if (!payload.userId) {
         throw new Error("Invalid token");
     }
