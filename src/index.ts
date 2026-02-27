@@ -44,6 +44,11 @@ app.get('/health', (req: express.Request, res: express.Response) => {
     res.json({ status: 'ok' });
 });
 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
+// Only listen when NOT running as a Vercel serverless function
+if (!process.env.VERCEL) {
+    app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
+    });
+}
+
+export default app;
