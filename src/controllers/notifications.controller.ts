@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { jwtVerify } from 'jose';
+import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "default-secret-key");
+const JWT_SECRET = process.env.JWT_SECRET || "default-secret-key";
 
 const extractUserId = async (req: Request): Promise<number | null> => {
     const authHeader = req.headers.authorization;
@@ -19,7 +19,7 @@ const extractUserId = async (req: Request): Promise<number | null> => {
     if (!token) return null;
 
     try {
-        const { payload } = await jwtVerify(token, JWT_SECRET);
+        const payload = jwt.verify(token, JWT_SECRET) as any;
         return Number(payload.userId);
     } catch {
         return null;
