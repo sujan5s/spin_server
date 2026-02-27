@@ -1,23 +1,8 @@
 {
-    "version": 2,
-    "installCommand": "npm install && npx prisma generate",
-    "builds": [
+    "rewrites": [
         {
-            "src": "src/index.ts",
-            "use": "@vercel/node",
-            "config": {
-                "includeFiles": [
-                    "prisma/**",
-                    "node_modules/.prisma/**",
-                    "node_modules/@prisma/client/**"
-                ]
-            }
-        }
-    ],
-    "routes": [
-        {
-            "src": "/(.*)",
-            "dest": "src/index.ts"
+            "source": "/(.*)",
+            "destination": "/api/index"
         }
     ]
 }
