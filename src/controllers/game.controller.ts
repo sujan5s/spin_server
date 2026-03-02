@@ -21,12 +21,22 @@ export const slotsSpin = async (req: Request, res: Response): Promise<void> => {
         const symbols = ['CHERRY', 'LEMON', 'ORANGE', 'PLUM', 'BELL', 'BAR', 'SEVEN'];
         const grid = Array(5).fill(0).map(() => Array(3).fill(0).map(() => symbols[Math.floor(Math.random() * symbols.length)]));
 
-        // Payout logic mock
         const winAmount = Math.random() > 0.5 ? betAmount * 2 : 0;
+
+        const sysSettings = await prisma.systemSettings.findFirst();
+        const bonusPct = sysSettings?.bonusDeductionPct ?? 20;
+
+        const deductBonus = Math.min(user.bonusBalance, betAmount * (bonusPct / 100));
+        const deductMain = betAmount - deductBonus;
+
+        if (user.balance < deductMain) { res.status(400).json({ error: "Insufficient main balance" }); return; }
 
         await prisma.user.update({
             where: { id: user.id },
-            data: { balance: { increment: winAmount - betAmount } }
+            data: {
+                balance: { increment: winAmount - deductMain },
+                bonusBalance: { decrement: deductBonus }
+            }
         });
 
         res.json({

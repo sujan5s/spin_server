@@ -57,11 +57,13 @@ export const deposit = async (req: Request, res: Response): Promise<void> => {
                 data: { userId, type: "deposit", amount },
             });
 
-            if (depositCount === 0) {
+            if (depositCount === 0 && user.referredById) {
                 const REFEREE_BONUS = 50;
+                const referrerId = user.referredById;
+
                 user = await tx.user.update({
                     where: { id: userId },
-                    data: { balance: { increment: REFEREE_BONUS } },
+                    data: { bonusBalance: { increment: REFEREE_BONUS } },
                     include: { referredBy: true }
                 });
 
@@ -69,23 +71,21 @@ export const deposit = async (req: Request, res: Response): Promise<void> => {
                     data: { userId, type: "welcome_bonus", amount: REFEREE_BONUS }
                 });
 
-                if (user.referredById) {
-                    const REFERRER_BONUS = 100;
-                    await tx.user.update({
-                        where: { id: user.referredById },
-                        data: { balance: { increment: REFERRER_BONUS } }
-                    });
+                const REFERRER_BONUS = 100;
+                await tx.user.update({
+                    where: { id: referrerId },
+                    data: { bonusBalance: { increment: REFERRER_BONUS } }
+                });
 
-                    await tx.transaction.create({
-                        data: { userId: user.referredById, type: "referral_bonus", amount: REFERRER_BONUS }
-                    });
-                }
+                await tx.transaction.create({
+                    data: { userId: referrerId, type: "referral_bonus", amount: REFERRER_BONUS }
+                });
             }
 
             return user;
         });
 
-        res.json({ balance: result.balance });
+        res.json({ balance: result.balance, bonusBalance: result.bonusBalance });
     } catch (error) {
         console.error("Deposit error:", error);
         res.status(500).json({ error: "Internal server error" });

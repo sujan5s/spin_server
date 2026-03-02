@@ -185,7 +185,7 @@ export async function getCurrentUser(tokenValue?: string) {
 
     const user = await prisma.user.findUnique({
         where: { id: Number(payload.userId) },
-        select: { id: true, email: true, name: true, balance: true, createdAt: true },
+        select: { id: true, email: true, name: true, balance: true, bonusBalance: true, kycStatus: true, kycDocumentUrl: true, createdAt: true },
     });
 
     if (!user) {

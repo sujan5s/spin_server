@@ -10,26 +10,30 @@ datasource db {
 }
 
 model User {
-  id               Int               @id @default(autoincrement())
-  email            String            @unique
-  name             String?
-  password         String?
-  googleId         String?           @unique
-  balance          Float             @default(0)
-  dailySpinCount   Int               @default(0)
-  lastSpinDate     DateTime          @default(now())
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  referralCode     String?           @unique
-  referredById     Int?
-  dragonTowerGames DragonTowerGame[]
-  minesGames       MinesGame[]
-  notifications    Notification[]
-  shuffleGames     ShuffleGame[]
-  tickets          Ticket[]
-  transactions     Transaction[]
-  referredBy       User?             @relation("Referrals", fields: [referredById], references: [id])
-  referrals        User[]            @relation("Referrals")
+  id                 Int                 @id @default(autoincrement())
+  email              String              @unique
+  name               String?
+  password           String?
+  googleId           String?             @unique
+  balance            Float               @default(0)
+  bonusBalance       Float               @default(0)
+  kycStatus          String              @default("UNVERIFIED") // UNVERIFIED, PENDING, VERIFIED, REJECTED
+  kycDocumentUrl     String?
+  dailySpinCount     Int                 @default(0)
+  lastSpinDate       DateTime            @default(now())
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  referralCode       String?             @unique
+  referredById       Int?
+  dragonTowerGames   DragonTowerGame[]
+  minesGames         MinesGame[]
+  notifications      Notification[]
+  shuffleGames       ShuffleGame[]
+  tickets            Ticket[]
+  transactions       Transaction[]
+  referredBy         User?               @relation("Referrals", fields: [referredById], references: [id])
+  referrals          User[]              @relation("Referrals")
+  withdrawalRequests WithdrawalRequest[] @relation("UserWithdrawalRequests")
 }
 
 model OtpVerification {
@@ -165,4 +169,29 @@ model DragonTowerSettings {
   expertMultipliers String
   masterMultipliers String
   updatedAt         DateTime @updatedAt
+}
+
+model SystemSettings {
+  id                Int      @id @default(1)
+  bonusDeductionPct Float    @default(20)
+  gamesEnabled      String   @default("{\"spin\":true,\"roulette\":true,\"slots\":true,\"mines\":true,\"plinko\":true,\"dragontower\":true,\"shuffle\":true,\"luckydraw\":true}")
+  updatedAt         DateTime @updatedAt
+}
+
+model WithdrawalRequest {
+  id     Int    @id @default(autoincrement())
+  userId Int
+  amount Float
+  status String @default("PENDING") // PENDING, SUCCESSFUL, REJECTED
+
+  // Payment Details
+  paymentMethod String // "UPI" or "BANK"
+  upiId         String?
+  accountNumber String?
+  ifscCode      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation("UserWithdrawalRequests", fields: [userId], references: [id])
 }
