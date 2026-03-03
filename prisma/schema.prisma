@@ -34,6 +34,8 @@ model User {
   referredBy         User?               @relation("Referrals", fields: [referredById], references: [id])
   referrals          User[]              @relation("Referrals")
   withdrawalRequests WithdrawalRequest[] @relation("UserWithdrawalRequests")
+  loginLogs          LoginLog[]          @relation("UserLoginLogs")
+  deletionRequests   AccountDeletionRequest[] @relation("UserDeletionRequests")
 }
 
 model OtpVerification {
@@ -196,4 +198,24 @@ model WithdrawalRequest {
   updatedAt DateTime @updatedAt
 
   user User @relation("UserWithdrawalRequests", fields: [userId], references: [id])
+}
+
+model LoginLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  email     String
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User     @relation("UserLoginLogs", fields: [userId], references: [id])
+}
+
+model AccountDeletionRequest {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  reason    String
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation("UserDeletionRequests", fields: [userId], references: [id])
 }
