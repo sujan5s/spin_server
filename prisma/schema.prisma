@@ -172,10 +172,12 @@ model DragonTowerSettings {
 }
 
 model SystemSettings {
-  id                Int      @id @default(1)
-  bonusDeductionPct Float    @default(20)
-  gamesEnabled      String   @default("{\"spin\":true,\"roulette\":true,\"slots\":true,\"mines\":true,\"plinko\":true,\"dragontower\":true,\"shuffle\":true,\"luckydraw\":true}")
-  updatedAt         DateTime @updatedAt
+  id                    Int      @id @default(1)
+  bonusDeductionPct     Float    @default(20)
+  referralBonusNewUser  Float    @default(50)
+  referralBonusReferrer Float    @default(100)
+  gamesEnabled          String   @default("{\"spin\":true,\"roulette\":true,\"slots\":true,\"mines\":true,\"plinko\":true,\"dragontower\":true,\"shuffle\":true,\"luckydraw\":true}")
+  updatedAt             DateTime @updatedAt
 }
 
 model WithdrawalRequest {

@@ -9,6 +9,25 @@ const JWT_SECRET = process.env.JWT_SECRET || "default-secret-key";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "INSERT_CLIENT_ID_HERE";
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
+async function applyReferralBonus(newUserId: number, referrerId: number) {
+    const settings = await prisma.systemSettings.findFirst();
+    const newUserBonus = settings ? settings.referralBonusNewUser : 50;
+    const referrerBonus = settings ? settings.referralBonusReferrer : 100;
+
+    if (newUserBonus > 0 || referrerBonus > 0) {
+        const txs: any[] = [];
+        if (newUserBonus > 0) {
+            txs.push(prisma.user.update({ where: { id: newUserId }, data: { bonusBalance: { increment: newUserBonus } } }));
+            txs.push(prisma.transaction.create({ data: { userId: newUserId, type: "welcome_bonus", amount: newUserBonus } }));
+        }
+        if (referrerBonus > 0) {
+            txs.push(prisma.user.update({ where: { id: referrerId }, data: { bonusBalance: { increment: referrerBonus } } }));
+            txs.push(prisma.transaction.create({ data: { userId: referrerId, type: "referral_bonus", amount: referrerBonus } }));
+        }
+        await prisma.$transaction(txs);
+    }
+}
+
 export async function loginUser(email?: string, password?: string) {
     if (!email || !password) {
         throw new Error("Email and password are required");
@@ -86,6 +105,10 @@ export async function verifyOtpAndSignUp(email?: string, name?: string, password
         },
     });
 
+    if (referredById) {
+        await applyReferralBonus(user.id, referredById);
+    }
+
     const token = jwt.sign(
         { userId: user.id, email: user.email },
         JWT_SECRET,
@@ -160,6 +183,10 @@ export async function loginWithGoogle(token?: string, referralCode?: string) {
                 referredById,
             },
         });
+
+        if (referredById) {
+            await applyReferralBonus(user.id, referredById);
+        }
     } else if (!user.googleId) {
         user = await prisma.user.update({ where: { email }, data: { googleId } });
     }

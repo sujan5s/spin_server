@@ -43,11 +43,7 @@ export const deposit = async (req: Request, res: Response): Promise<void> => {
 
         // Update user balance and create transaction
         const result = await prisma.$transaction(async (tx) => {
-            const depositCount = await tx.transaction.count({
-                where: { userId, type: "deposit" }
-            });
-
-            let user = await tx.user.update({
+            const user = await tx.user.update({
                 where: { id: userId },
                 data: { balance: { increment: amount } },
                 include: { referredBy: true }
@@ -56,31 +52,6 @@ export const deposit = async (req: Request, res: Response): Promise<void> => {
             await tx.transaction.create({
                 data: { userId, type: "deposit", amount },
             });
-
-            if (depositCount === 0 && user.referredById) {
-                const REFEREE_BONUS = 50;
-                const referrerId = user.referredById;
-
-                user = await tx.user.update({
-                    where: { id: userId },
-                    data: { bonusBalance: { increment: REFEREE_BONUS } },
-                    include: { referredBy: true }
-                });
-
-                await tx.transaction.create({
-                    data: { userId, type: "welcome_bonus", amount: REFEREE_BONUS }
-                });
-
-                const REFERRER_BONUS = 100;
-                await tx.user.update({
-                    where: { id: referrerId },
-                    data: { bonusBalance: { increment: REFERRER_BONUS } }
-                });
-
-                await tx.transaction.create({
-                    data: { userId: referrerId, type: "referral_bonus", amount: REFERRER_BONUS }
-                });
-            }
 
             return user;
         });
