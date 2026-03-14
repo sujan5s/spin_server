@@ -1,19 +1,11 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 const prisma = new PrismaClient();
 
-// Set up Nodemailer transport
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // true for 465, false for other ports (uses STARTTLS)
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-});
+// Resend sends email via HTTPS API — no SMTP sockets, works on Render free tier
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendOtp = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -35,9 +27,10 @@ export const sendOtp = async (req: Request, res: Response): Promise<void> => {
             create: { email, otp, expiresAt },
         });
 
-        // Send email
-        await transporter.sendMail({
-            from: `"Spin Platform" <${process.env.EMAIL_USER}>`,
+        // Send email via Resend (HTTPS API — no SMTP, works everywhere)
+        const fromAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+        const { error } = await resend.emails.send({
+            from: `Spin Platform <${fromAddress}>`,
             to: email,
             subject: 'Your OTP for Signup',
             html: `
@@ -51,6 +44,12 @@ export const sendOtp = async (req: Request, res: Response): Promise<void> => {
                 </div>
             `,
         });
+
+        if (error) {
+            console.error('Resend email error:', error);
+            res.status(500).json({ error: 'Failed to send OTP', details: error.message });
+            return;
+        }
 
         res.json({ message: 'OTP sent successfully' });
     } catch (error: any) {
