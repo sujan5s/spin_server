@@ -10,15 +10,18 @@ dns.setDefaultResultOrder('ipv4first');
 const prisma = new PrismaClient();
 
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
+    // Force direct IPv4 connection to bypass Render's broken IPv6 DNS resolution
+    host: '142.250.141.108', // smtp.gmail.com IPv4
     port: 465,
     secure: true,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
-    // @ts-ignore - Force IPv4 to bypass Render's IPv6 routing bug
-    family: 4
+    tls: {
+        // Required because the SSL certificate is for smtp.gmail.com, not the raw IP
+        rejectUnauthorized: false
+    }
 } as any);
 
 export const sendOtp = async (req: Request, res: Response): Promise<void> => {
