@@ -7,7 +7,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         const { user, token } = await loginUser(email, password);
 
         res.cookie('token', token, {
-            httpOnly: true,
+            httpOnly: false,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
             maxAge: 60 * 60 * 24 * 1000 // 24 hours in milliseconds
@@ -36,7 +36,7 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
         const { user, token } = await verifyOtpAndSignUp(email, name, password, otp, referralCode);
 
         res.cookie('token', token, {
-            httpOnly: true,
+            httpOnly: false,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
             maxAge: 60 * 60 * 24 * 1000
@@ -61,7 +61,7 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
         const { user, token } = await loginWithGoogle(inputToken, referralCode);
 
         res.cookie('token', token, {
-            httpOnly: true,
+            httpOnly: false,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
             maxAge: 60 * 60 * 24 * 1000

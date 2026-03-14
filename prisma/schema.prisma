@@ -129,6 +129,19 @@ model SlotsConfiguration {
   updatedAt DateTime @updatedAt
 }
 
+model ShuffleConfiguration {
+  id         Int      @id @default(autoincrement())
+  multiplier Float    @default(2.90)
+  minBet     Float    @default(10)
+  updatedAt  DateTime @updatedAt
+}
+
+model RouletteConfiguration {
+  id        Int      @id @default(autoincrement())
+  settings  String
+  updatedAt DateTime @updatedAt
+}
+
 model ShuffleGame {
   id          Int      @id @default(autoincrement())
   userId      Int
@@ -179,6 +192,8 @@ model SystemSettings {
   referralBonusNewUser  Float    @default(50)
   referralBonusReferrer Float    @default(100)
   gamesEnabled          String   @default("{\"spin\":true,\"roulette\":true,\"slots\":true,\"mines\":true,\"plinko\":true,\"dragontower\":true,\"shuffle\":true,\"luckydraw\":true}")
+  marqueeText           String   @default("")
+  marqueeSpeed          Int      @default(25)
   updatedAt             DateTime @updatedAt
 }
 
