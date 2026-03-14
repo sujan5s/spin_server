@@ -15,21 +15,24 @@ const app = express();
 const port = process.env.PORT || 3001;
 export const prisma = new PrismaClient();
 
+const allowedOrigins = [
+    'http://localhost:3000',
+    process.env.CLIENT_URL,
+].filter(Boolean) as string[];
+
 const httpServer = http.createServer(app);
 export const io = new SocketIOServer(httpServer, {
     cors: {
-        origin: [
-            'http://localhost:3000',
-            process.env.CLIENT_URL || ''
-        ].filter(Boolean),
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, true);
+            if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+                return callback(null, true);
+            }
+            callback(new Error('CORS: origin not allowed'));
+        },
         credentials: true
     }
 });
-
-const allowedOrigins = [
-    'http://localhost:3000',
-    process.env.CLIENT_URL,           // e.g. https://your-app.vercel.app
-].filter(Boolean) as string[];
 
 app.use(cors({
     origin: (origin, callback) => {
