@@ -5,12 +5,16 @@ import nodemailer from 'nodemailer';
 const prisma = new PrismaClient();
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
-});
+    // @ts-ignore - Force IPv4 to bypass Render's IPv6 routing bug
+    family: 4
+} as any);
 
 export const sendOtp = async (req: Request, res: Response): Promise<void> => {
     try {
