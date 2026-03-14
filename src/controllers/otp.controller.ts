@@ -1,11 +1,35 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { Resend } from 'resend';
 
 const prisma = new PrismaClient();
 
-// Resend sends email via HTTPS API — no SMTP sockets, works on Render free tier
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Send email via Brevo HTTPS API (no SMTP sockets, works on Render free tier)
+async function sendEmailViaBrevo(to: string, subject: string, html: string) {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+            'accept': 'application/json',
+            'api-key': process.env.BREVO_API_KEY || '',
+            'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+            sender: {
+                name: 'Spin Platform',
+                email: process.env.BREVO_FROM_EMAIL || process.env.EMAIL_USER || 'noreply@spin.com',
+            },
+            to: [{ email: to }],
+            subject,
+            htmlContent: html,
+        }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Brevo API error: ${JSON.stringify(errorData)}`);
+    }
+
+    return await response.json();
+}
 
 export const sendOtp = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -27,13 +51,11 @@ export const sendOtp = async (req: Request, res: Response): Promise<void> => {
             create: { email, otp, expiresAt },
         });
 
-        // Send email via Resend (HTTPS API — no SMTP, works everywhere)
-        const fromAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-        const { error } = await resend.emails.send({
-            from: `Spin Platform <${fromAddress}>`,
-            to: email,
-            subject: 'Your OTP for Signup',
-            html: `
+        // Send email via Brevo (HTTPS API — works everywhere including Render)
+        await sendEmailViaBrevo(
+            email,
+            'Your OTP for Signup',
+            `
                 <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 24px; border-radius: 12px; background: #0f0f0f; color: #fff;">
                     <h2 style="color: #a855f7;">Verify your email</h2>
                     <p>Use the code below to complete your signup. It expires in 10 minutes.</p>
@@ -42,14 +64,8 @@ export const sendOtp = async (req: Request, res: Response): Promise<void> => {
                     </div>
                     <p style="color: #999; font-size: 12px;">If you didn't request this, ignore this email.</p>
                 </div>
-            `,
-        });
-
-        if (error) {
-            console.error('Resend email error:', error);
-            res.status(500).json({ error: 'Failed to send OTP', details: error.message });
-            return;
-        }
+            `
+        );
 
         res.json({ message: 'OTP sent successfully' });
     } catch (error: any) {
