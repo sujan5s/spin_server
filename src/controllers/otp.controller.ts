@@ -1,6 +1,11 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import nodemailer from 'nodemailer';
+import dns from 'dns';
+
+// Force Node.js to use IPv4 for DNS resolution
+// This is necessary because Render's backend services often fail to route outgoing IPv6 traffic (ENETUNREACH)
+dns.setDefaultResultOrder('ipv4first');
 
 const prisma = new PrismaClient();
 
